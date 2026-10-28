@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scratch-off Ticket Picker</title>
+    <!-- Add a fun font -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Toggle Button for Settings -->
+    <button id="settings-toggle" class="settings-toggle">⚙️ Settings</button>
+    <div id="pool-count" class="pool-count">0</div>
+
+    <div class="ticket-container">
+        <!-- The main background of the ticket -->
+        <img src="background.png" alt="Ticket Background" class="ticket-bg">
+        
+        <!-- The scratchable area container, centered on the ticket -->
+        <div class="scratch-area">
+            <!-- The image to be revealed -->
+            <img src="namebackground.png" alt="Prize Background" class="scratch-under">
+            <!-- The text to be revealed -->
+            <div id="prize-text" class="prize-text">???</div>
+            <!-- The canvas that covers the prize (scratch layer) -->
+            <canvas id="scratch-canvas" class="scratch-over"></canvas>
+        </div>
+    </div>
+
+    <!-- Bottom controls: new ticket only -->
+    <div class="bottom-controls">
+        <button id="new-bottom-btn" class="action-btn small">New Ticket</button>
+    </div>
+
+    <!-- UI Controls (Initially Hidden) -->
+    <div id="controls-panel" class="controls hidden">
+        <button id="close-settings" class="close-btn">X</button>
+        <h3>Ticket Maker</h3>
+        <label class="mode-label">
+            <input type="radio" name="mode" value="number" checked> 
+            <span>🔢 Random Number</span>
+        </label>
+        <label class="mode-label">
+            <input type="radio" name="mode" value="list"> 
+            <span>📝 Name List</span>
+        </label>
+        
+        <div id="number-settings" class="settings-group">
+            <div class="input-row">
+                <input type="number" id="min-num" placeholder="Min" value="1">
+                <span>to</span>
+                <input type="number" id="max-num" placeholder="Max" value="100">
+            </div>
+        </div>
+        
+        <div id="list-settings" class="settings-group" style="display:none;">
+            <textarea id="name-list" placeholder="Enter names here...&#10;One per line!"></textarea>
+        </div>
+
+        <label class="remove-label in-settings">
+            <input type="checkbox" id="remove-from-pool" checked>
+            Remove this item from pool after use
+        </label>
+
+        <button id="reset-btn" class="action-btn">✨ New Ticket! ✨</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
