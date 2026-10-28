@@ -1,0 +1,7 @@
+node_modules
+.next
+out
+public/race
+__race_src__
+.env*.local
+.DS_Store

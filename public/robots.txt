@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /packs/
+Disallow: /race/
+Disallow: /js/
+Disallow: /css/
+Disallow: /sounds/
+
