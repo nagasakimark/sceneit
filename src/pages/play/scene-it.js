@@ -7,26 +7,8 @@ import ThemePicker from '@/themes/ThemePicker'
 import { useTheme } from '@/themes/useTheme'
 import { isTheme } from '@/themes/themes'
 import playSound from '@/helpers/playSound'
-import { ensureRacePackCached } from '@/helpers/racePack'
+import { RaceGame, RaceThumb, RACES } from '@/race'
 import { withBasePath } from '@/helpers/basePath'
-
-// Race definitions (thumbnails served from /race/{dir}/thumbnail.webp)
-const RACES = [
-	{ name: 'Beyblade Race', dir: 'beyblade', emoji: '⚔️' },
-	{ name: 'Block Race', dir: 'block-race-1000', emoji: '🧱' },
-	{ name: 'Car Race', dir: 'car-race-1000', emoji: '🏎️' },
-	{ name: 'Downhill Ski Race', dir: 'downhill-ski-race-1000', emoji: '⛷️' },
-	{ name: 'Farm Race', dir: 'farm-race-1000', emoji: '🐮' },
-	{ name: 'Food Race', dir: 'food-race-1000', emoji: '🍕' },
-	{ name: 'Go Cart Race', dir: 'go-cart-race-1000', emoji: '🏁' },
-	{ name: 'Halloween Race', dir: 'halloween-race-1000', emoji: '🎃' },
-	{ name: 'Italian Brainrot', dir: 'italian-brainrot-race', emoji: '🤌' },
-	{ name: 'Monsters Race', dir: 'monsters-race-1000', emoji: '👾' },
-	{ name: 'Pirate Race', dir: 'pirate-race-1000', emoji: '🏴‍☠️' },
-	{ name: 'Santa Race', dir: 'santa-race-1000', emoji: '🎅' },
-	{ name: 'Speed Boat Race', dir: 'speed-boat-race-1000', emoji: '⛵' },
-	{ name: 'Toy Race', dir: 'toy-race-1000', emoji: '🪀' }
-]
 
 // Colors from categories.json to cycle through
 const BG_COLORS = [1, 2, 3, 4, 5, 6].map((n) => `rgb(var(--th-c${n}))`) // per-theme category tints
@@ -125,20 +107,11 @@ export default function SceneItGame () {
 	const [currentQuestionMarks, setCurrentQuestionMarks] = useState({}) // { [teamIndex]: boolean }
 
 	// Race state
-	const [selectedRace, setSelectedRace] = useState(null) // { name, dir, emoji }
+	const [selectedRace, setSelectedRace] = useState(null) // one entry of RACES
 	const [raceFinishOrder, setRaceFinishOrder] = useState([]) // team names in finishing order
 	const [raceCountdown, setRaceCountdown] = useState(null) // null | 3 | 2 | 1 | 0
 	const [racingTeamNames, setRacingTeamNames] = useState([]) // names of teams who are racing (correct teams only)
 	const [isSoloWinner, setIsSoloWinner] = useState(false) // true when single team gets question correct in non-Splatoon mode
-	const [racePackReady, setRacePackReady] = useState(false)
-	// Full-pack preload progress (for "all races ready" UX)
-	const [racePreload, setRacePreload] = useState({ active: false, phase: null, cached: 0, total: 0, error: null })
-	// Separate thumbnail preloading from "start a race" loading so the picker stays clickable.
-	const [raceThumbsLoading, setRaceThumbsLoading] = useState(false)
-	const [raceThumbsError, setRaceThumbsError] = useState(null)
-	const [racePackLoading, setRacePackLoading] = useState(false) // blocking only when starting a race
-	const [racePackError, setRacePackError] = useState(null)
-	const iframeRef = useRef(null)
 	// Set to true before restoring a session to prevent the Splatoon reset effect
 	// from wiping restored scores when usingSplatoon/splatoonTeamCount are set.
 	const skipSplatoonResetRef = useRef(false)
@@ -177,44 +150,6 @@ export default function SceneItGame () {
 			setHasWindow(true)
 		}
 	}, [])
-
-	// Preload the FULL race pack as soon as the main game page is opened.
-	// This makes races instantly ready later and gives a visible progress bar.
-	useEffect(() => {
-		let cancelled = false
-    ;(async () => {
-			// Avoid spamming if a preload is already active/finished for this session.
-			if (racePreload.active || racePackReady) return
-			setRacePreload({ active: true, phase: 'init', cached: 0, total: 0, error: null })
-			try {
-				const res = await ensureRacePackCached({
-					mode: 'full',
-					onProgress: (p) => {
-						if (cancelled) return
-						setRacePreload(prev => ({
-							...prev,
-							active: p.phase !== 'done',
-							phase: p.phase,
-							cached: p.cached ?? prev.cached,
-							total: p.total ?? prev.total,
-							error: null
-						}))
-					}
-				})
-				if (!cancelled) {
-					setRacePackReady(!!res?.ok)
-					if (!res?.ok) {
-						setRacePreload(prev => ({ ...prev, active: false, phase: 'error', error: res?.reason || 'preload-failed' }))
-					} else {
-						setRacePreload(prev => ({ ...prev, active: false, phase: 'done', cached: prev.total || prev.cached, error: null }))
-					}
-				}
-			} catch (e) {
-				if (!cancelled) setRacePreload(prev => ({ ...prev, active: false, phase: 'error', error: 'preload-exception' }))
-			}
-		})()
-		return () => { cancelled = true }
-	}, [racePreload.active, racePackReady])
 
 	// Global button-click pop sound — skips during race/splatoon which have their own audio
 	useEffect(() => {
@@ -267,44 +202,6 @@ export default function SceneItGame () {
 		const t = setTimeout(() => setRaceCountdown(c => c - 1), 1000)
 		return () => clearTimeout(t)
 	}, [raceCountdown])
-
-	// Set up race callback while on racing screen — in parent scope so iframe never remounts
-	useEffect(() => {
-		if (gameState !== 'racing') return
-		window.raceFinished = (order) => handleRaceFinished(order)
-		window.winShow = () => {}
-		return () => {
-			delete window.raceFinished
-			delete window.winShow
-		}
-	}, [gameState])
-
-	// Preload race pack (only when user reaches race UI).
-	// In "obscured builds" /public/race won't exist, so thumbnails/pages rely on this cache.
-	useEffect(() => {
-		if (gameState !== 'racePicker' && gameState !== 'racing') return
-		let cancelled = false
-    ;(async () => {
-			if (racePackReady || raceThumbsLoading || racePackLoading) return
-			setRaceThumbsLoading(true)
-			setRaceThumbsError(null)
-			try {
-				const res = await ensureRacePackCached({ mode: 'thumbnails' })
-				if (!cancelled) {
-					setRacePackReady(!!res?.ok)
-					if (!res?.ok) setRaceThumbsError(res?.reason || 'thumbs-load-failed')
-				}
-			} catch (e) {
-				if (!cancelled) {
-					setRacePackReady(false)
-					setRaceThumbsError('thumbs-load-exception')
-				}
-			} finally {
-				if (!cancelled) setRaceThumbsLoading(false)
-			}
-		})()
-		return () => { cancelled = true }
-	}, [gameState, racePackReady, raceThumbsLoading, racePackLoading])
 
 	// Global keyboard hotkeys
 	useEffect(() => {
@@ -530,28 +427,10 @@ export default function SceneItGame () {
 	}
 
 	const handleRaceSelect = (race) => {
-		(async () => {
-			// Ensure pack is cached before the iframe loads (prevents 404 in obscured builds).
-			// Ensure the selected race is cached even if thumbnails already are.
-			if (!racePackLoading) {
-				setRacePackLoading(true)
-				setRacePackError(null)
-				try {
-					const res = await ensureRacePackCached({ mode: 'race', raceDir: race?.dir })
-					setRacePackReady(!!res?.ok)
-					if (!res?.ok) setRacePackError(res?.reason || 'pack-load-failed')
-				} catch (e) {
-					setRacePackReady(false)
-					setRacePackError('pack-load-exception')
-				} finally {
-					setRacePackLoading(false)
-				}
-			}
-			setSelectedRace(race)
-			setRaceFinishOrder([])
-			setRaceCountdown(null)
-			setGameState('racing')
-		})()
+		setSelectedRace(race)
+		setRaceFinishOrder([])
+		setRaceCountdown(null)
+		setGameState('racing')
 	}
 
 	const handleRaceFinished = (order) => {
@@ -648,37 +527,6 @@ export default function SceneItGame () {
 	const UploadScreen = () => (
 		<GameWrapper className="flex items-center justify-center" style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: 'rgb(var(--th-bg))', backgroundBlendMode: 'multiply' }}>
 			<div className="flex flex-col items-center justify-center min-h-screen w-full px-4">
-				{/* Race pack preload progress bar */}
-				{(racePreload.total > 0 || racePreload.error) && (
-					<div className="w-full max-w-xl mb-6 bg-black/40 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-						<div className="flex items-center justify-between gap-3 mb-2">
-							<span className="text-white font-black text-sm uppercase tracking-wide">Preparing races</span>
-							<span className="text-white/80 text-xs font-bold tabular-nums">
-								{racePreload.error
-									? `Error (${racePreload.error})`
-									: racePreload.total > 0
-										? `${racePreload.cached}/${racePreload.total}`
-										: 'Starting…'}
-							</span>
-						</div>
-						<div className="h-3 w-full rounded-full bg-white/10 overflow-hidden">
-							<div
-								className="h-full bg-th-ok"
-								style={{
-									width: racePreload.total > 0 ? `${Math.max(2, Math.floor((racePreload.cached / racePreload.total) * 100))}%` : '2%',
-									transition: 'width 0.15s linear'
-								}}
-							/>
-						</div>
-						<p className="mt-2 text-xs text-white/70 font-bold">
-							{racePreload.error
-								? 'Races may 404 until the pack finishes caching. Refresh and try again.'
-								: racePreload.active
-									? 'Unpacking and caching races for this session…'
-									: 'Races are ready.'}
-						</p>
-					</div>
-				)}
 				<h1 className="text-7xl md:text-8xl font-bold mb-2 text-white uppercase tracking-tight" style={{ fontFamily: 'PrintClearly, sans-serif', WebkitTextStroke: '1px rgba(255,255,255,0.3)' }}>Scene It</h1>
 				<p className="text-2xl text-th-soft mb-10 font-bold">🎬 Game Host</p>
 				<div className="bg-th-panel p-10 rounded-2xl text-center border-4 border-dashed border-th-info hover:border-th-accent transition-colors shadow-2xl max-w-xl w-full">
@@ -1406,19 +1254,12 @@ export default function SceneItGame () {
 						const borderColor = BG_COLORS[rIdx % BG_COLORS.length]
 						return (
 							<button
-								key={race.dir}
+								key={race.id}
 								onClick={() => handleRaceSelect(race)}
 								className="group relative rounded-xl overflow-hidden transition-all duration-200 hover:scale-[1.04] active:scale-95"
 								style={{ border: `3px solid ${borderColor}`, background: 'rgb(var(--th-panel))' }}
 							>
-								{/* Thumbnails load from /race/... which is served via SW cache in obscured builds.
-                    If the pack hasn't loaded yet, this will just show the gradient overlay. */}
-								<img
-                  src={withBasePath(`/race/${race.dir}/thumbnail.webp`)}
-									alt={race.name}
-									className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-									onError={(e) => { e.target.style.display = 'none' }}
-								/>
+								<RaceThumb race={race} />
 								<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
 								<div className="absolute inset-x-0 bottom-0 p-2 text-center">
 									<span className="text-white text-xs font-black leading-tight drop-shadow-lg uppercase">{race.name}</span>
@@ -1428,18 +1269,6 @@ export default function SceneItGame () {
 					})}
 				</div>
 			</div>
-
-			{/* Non-blocking thumbnail preload indicator */}
-			{raceThumbsLoading && (
-				<div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] bg-black/60 backdrop-blur-sm text-white text-xs font-bold px-4 py-2 rounded-full border border-white/20 pointer-events-none">
-					Loading race thumbnails…
-				</div>
-			)}
-			{!raceThumbsLoading && raceThumbsError && (
-				<div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] bg-black/60 backdrop-blur-sm text-white text-xs font-bold px-4 py-2 rounded-full border border-white/20 pointer-events-none">
-					Race thumbnails not cached ({raceThumbsError}). Races may load slower.
-				</div>
-			)}
 		</GameWrapper>
 	)
 
@@ -1836,7 +1665,8 @@ export default function SceneItGame () {
 			{gameState === 'racePicker' && <RacePickerScreen />}
 			{/* RacingScreen is inlined (not a sub-component) to keep the iframe stable during raceCountdown re-renders */}
 			{gameState === 'racing' && (() => {
-        const raceUrl = withBasePath(`/race/${selectedRace?.dir}/index.html?countdown=00:00:10&characters=${racingTeamNames.length || teams.length}&volume=20`)
+        const raceNums = racingTeamNames.length ? racingTeamNames : teams.map((_, k) => String(k === 9 ? 0 : k + 1))
+				const racers = raceNums.map((n) => { const t = teams[(n === '0' ? 10 : parseInt(n, 10)) - 1] || {}; return { id: n, name: t.name || `Team ${n}`, color: t.color || '#ff1744' } })
 				return (
 					<div className="fixed inset-0 z-50 bg-black flex flex-col">
 						<div className="h-12 bg-th-panel flex items-center px-4 gap-4 shrink-0 z-50" style={{ borderBottom: '3px solid rgb(var(--th-bad))' }}>
@@ -1844,7 +1674,7 @@ export default function SceneItGame () {
 							<span className="text-white font-black text-lg uppercase" style={{ fontFamily: 'PrintClearly, sans-serif' }}>{selectedRace?.emoji} {selectedRace?.name}</span>
 						</div>
 						<div className="flex-1 relative">
-							<iframe ref={iframeRef} src={raceUrl} className="w-full h-full border-none" title={`Race: ${selectedRace?.name}`} allow="autoplay" />
+							<RaceGame key={selectedRace?.id} race={selectedRace} racers={racers} duration={14} onFinish={handleRaceFinished} />
 							{raceCountdown !== null && (
 								<div className="absolute inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(28,35,58,0.9)' }}>
 									<div className="text-center">

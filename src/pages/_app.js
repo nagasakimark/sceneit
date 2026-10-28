@@ -5,7 +5,6 @@ import { useEffect } from 'react'
 import NewGameForm from '@/components/Form/NewGameForm'
 import ThemeSync from '@/themes/ThemeSync'
 import ThemeDecor from '@/themes/ThemeDecor'
-import { registerRacePackServiceWorkerOnly } from '@/helpers/racePack'
 const rubik = Rubik({ subsets: ['latin'] })
 
 export default function App ({ Component, pageProps }) {
@@ -29,11 +28,6 @@ export default function App ({ Component, pageProps }) {
 		}
 	}, [])
 
-	// Register SW early so it can control the page before /race is needed.
-	// We do NOT download/unzip the pack here (that happens lazily on game screens).
-	useEffect(() => {
-		registerRacePackServiceWorkerOnly().catch(() => {})
-	}, [])
 	return (
 		<>
 			<Head>
