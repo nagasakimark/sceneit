@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 // Lets the teacher scrub the movie's clip and grab the current frame as a JPEG File.
-export default function FramePicker ({ video, onPick }) {
+export default function FramePicker ({ video, onPick, label = '🎞 Pick a frame from the video' }) {
 	const [open, setOpen] = useState(false)
 	const [url, setUrl] = useState(null)
 	const videoRef = useRef(null)
@@ -14,7 +14,7 @@ export default function FramePicker ({ video, onPick }) {
 	}, [open, video])
 
 	if (!video) {
-		return <span className="text-xs text-gray-500 mt-2 block">Add a video to this movie to pick a frame from it</span>
+		return <span className="text-xs text-white/50 mt-2 block">Add a video clip to this movie first to pick a frame from it.</span>
 	}
 
 	const step = (d) => {
@@ -48,21 +48,21 @@ export default function FramePicker ({ video, onPick }) {
 		}, 'image/jpeg', 0.92)
 	}
 
-	const btn = 'px-3 py-1 rounded text-xs font-semibold bg-gray-600 hover:bg-gray-500 text-white'
+	const btn = 'px-3 py-1 rounded text-xs font-bold bg-th-panel2 hover:bg-white/20 text-th-ink'
 	return (
 		<div className="mt-2">
-			<button type="button" onClick={() => setOpen(!open)} className="text-xs text-blue-400 hover:text-th-soft font-medium">
-				{open ? 'Close video' : '🎞 Pick a frame from the video'}
+			<button type="button" onClick={() => setOpen(!open)} className="text-sm text-th-soft hover:underline font-bold">
+				{open ? 'Close video' : label}
 			</button>
 			{open && url && (
-				<div className="mt-2 bg-gray-800 p-2 rounded-lg">
+				<div className="mt-2 bg-black/30 p-2 rounded-lg">
 					<video ref={videoRef} src={url} controls preload="auto" className="w-full rounded max-h-64 bg-black" />
 					<div className="flex flex-wrap gap-2 mt-2">
 						<button type="button" onClick={() => step(-1)} className={btn}>◀◀ 1s</button>
 						<button type="button" onClick={() => step(-0.04)} className={btn}>◀ Frame</button>
 						<button type="button" onClick={() => step(0.04)} className={btn}>Frame ▶</button>
 						<button type="button" onClick={() => step(1)} className={btn}>1s ▶▶</button>
-						<button type="button" onClick={grab} className="px-3 py-1 rounded text-xs font-bold bg-green-600 hover:bg-green-500 text-white ml-auto">Use this frame</button>
+						<button type="button" onClick={grab} className="px-3 py-1 rounded text-xs font-black bg-th-ok hover:bg-th-okl text-th-onok ml-auto">Use this frame</button>
 					</div>
 				</div>
 			)}
