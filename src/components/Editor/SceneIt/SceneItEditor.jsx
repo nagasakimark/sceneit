@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import JSZip from 'jszip'
+import FramePicker from './FramePicker'
+import { compressVideo } from '@/helpers/compressVideo'
 
 // ---------- CoverShapeEditor ----------
 // Lets the author drag/resize a colored rectangle over the question image.
@@ -335,6 +337,8 @@ export default function SceneItEditor () {
 	const [movies, setMovies] = useState([])
 	const [currentMovieIndex, setCurrentMovieIndex] = useState(null)
 	const [isGenerating, setIsGenerating] = useState(false)
+	const [compressVideos, setCompressVideos] = useState(true)
+	const [progressText, setProgressText] = useState(null)
 	const [isImporting, setIsImporting] = useState(false)
 	const [validationModal, setValidationModal] = useState(null)
 
@@ -532,9 +536,16 @@ export default function SceneItEditor () {
 				}
 
 				if (m.video) {
-					const ext = m.video.name.split('.').pop()
+					let video = m.video
+					if (compressVideos) {
+						const label = `Compressing video ${i + 1}/${movies.length}`
+						setProgressText(`${label} … 0%`)
+						video = await compressVideo(m.video, (p) => setProgressText(`${label} … ${Math.round(p * 100)}%`))
+						setProgressText(null)
+					}
+					const ext = video.name.split('.').pop()
 					const filename = `movie_${i}_video.${ext}`
-					assetsFolder.file(filename, m.video)
+					assetsFolder.file(filename, video)
 					movieEntry.video = `assets/${filename}`
 				}
 
@@ -593,6 +604,9 @@ export default function SceneItEditor () {
 		<div className="text-white min-h-screen bg-gray-900 p-6">
 			{validationModal && <ValidationModal {...validationModal} />}
 
+			{progressText && (
+				<div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-black/85 border border-blue-400 text-white font-bold px-5 py-3 rounded-xl shadow-xl">{progressText}</div>
+			)}
 			<div className="max-w-[1800px] mx-auto">
 				<div className="mb-6">
 					<h1 className="text-4xl font-bold mb-2">Scene It - Quiz Editor</h1>
@@ -683,6 +697,10 @@ export default function SceneItEditor () {
 							>
 								{isGenerating ? '⏳ Packaging...' : '⬇ Download Quiz Pack'}
 							</button>
+							<label className="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
+								<input type="checkbox" checked={compressVideos} onChange={(e) => setCompressVideos(e.target.checked)} className="w-4 h-4" />
+								Compress videos when saving (smaller files, TV quality)
+							</label>
 						</div>
 					</div>
 
@@ -865,6 +883,10 @@ export default function SceneItEditor () {
 																	accept="image/*"
 																	onChange={(e) => handleQuestionImageChange(e, currentMovieIndex, qIdx)}
 																	className="text-xs w-full file:mr-2 file:py-2 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-gray-600 file:text-white hover:file:bg-gray-500 file:cursor-pointer"
+																/>
+																<FramePicker
+																	video={movies[currentMovieIndex].video}
+																	onPick={(file) => updateQuestion(currentMovieIndex, qIdx, 'image', file)}
 																/>
 																{q.image && (
 																	<span className="text-xs text-green-500 mt-2 block">✓ {q.image.name}</span>
