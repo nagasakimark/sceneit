@@ -3,6 +3,9 @@ import Head from 'next/head'
 import Link from 'next/link'
 import Image from 'next/image'
 import { loadQuizZip } from '@/helpers/loadQuizZip'
+import ThemePicker from '@/themes/ThemePicker'
+import { useTheme } from '@/themes/useTheme'
+import { isTheme } from '@/themes/themes'
 import playSound from '@/helpers/playSound'
 import { ensureRacePackCached } from '@/helpers/racePack'
 import { withBasePath } from '@/helpers/basePath'
@@ -26,14 +29,7 @@ const RACES = [
 ]
 
 // Colors from categories.json to cycle through
-const BG_COLORS = [
-	'#e6c642', // History (Yellow)
-	'#f94e4e', // Entertainment (Red)
-	'#685af5', // Technology (Purple)
-	'#3ce956', // Geography (Green)
-	'#307de7', // Art (Blue)
-	'#a656fd' // Space (Violet)
-]
+const BG_COLORS = [1, 2, 3, 4, 5, 6].map((n) => `rgb(var(--th-c${n}))`) // per-theme category tints
 
 // Team colors for non-Splatoon mode - matches Splatoon team order exactly
 const TEAM_COLORS = ['#ff1744', '#2196f3', '#4caf50', '#ff9800', '#9c27b0', '#ffeb3b', '#fb00ff', '#02e1ff', '#795548', '#607d8b']
@@ -53,6 +49,12 @@ const SPLATOON_TEAMS = [
 	{ id: 9, name: 'Brown', color: '#795548' },
 	{ id: 10, name: 'Gray', color: '#607d8b' }
 ]
+
+function ThemePickerBar () {
+	const theme = useTheme((s) => s.theme)
+	const setTheme = useTheme((s) => s.setTheme)
+	return <ThemePicker value={theme} onChange={(id) => setTheme(id, true)} />
+}
 
 // Renders text that may contain bracketed annotations, e.g. "Titanic (タイタニック)".
 // The bracketed part is shown small and centred above the main text (like furigana).
@@ -374,6 +376,7 @@ export default function SceneItGame () {
 			// Clear any saved Splatoon map state so each new quiz starts fresh
 			try { localStorage.removeItem('splatMapColors') } catch (e) {}
 			setQuizData(quizData)
+			if (isTheme(quizData.theme)) useTheme.getState().setTheme(quizData.theme)
 			setAssets(assets)
 			setGameState('teams')
 		} catch (err) {
@@ -643,7 +646,7 @@ export default function SceneItGame () {
 
 	// Components
 	const UploadScreen = () => (
-		<GameWrapper className="flex items-center justify-center" style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: '#307de7', backgroundBlendMode: 'multiply' }}>
+		<GameWrapper className="flex items-center justify-center" style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: 'rgb(var(--th-bg))', backgroundBlendMode: 'multiply' }}>
 			<div className="flex flex-col items-center justify-center min-h-screen w-full px-4">
 				{/* Race pack preload progress bar */}
 				{(racePreload.total > 0 || racePreload.error) && (
@@ -660,7 +663,7 @@ export default function SceneItGame () {
 						</div>
 						<div className="h-3 w-full rounded-full bg-white/10 overflow-hidden">
 							<div
-								className="h-full bg-[#22c55e]"
+								className="h-full bg-th-ok"
 								style={{
 									width: racePreload.total > 0 ? `${Math.max(2, Math.floor((racePreload.cached / racePreload.total) * 100))}%` : '2%',
 									transition: 'width 0.15s linear'
@@ -677,19 +680,19 @@ export default function SceneItGame () {
 					</div>
 				)}
 				<h1 className="text-7xl md:text-8xl font-bold mb-2 text-white uppercase tracking-tight" style={{ fontFamily: 'PrintClearly, sans-serif', WebkitTextStroke: '1px rgba(255,255,255,0.3)' }}>Scene It</h1>
-				<p className="text-2xl text-blue-200 mb-10 font-bold">🎬 Game Host</p>
-				<div className="bg-[#1a1f38] p-10 rounded-2xl text-center border-4 border-dashed border-[#3b82f6] hover:border-[#e6c642] transition-colors shadow-2xl max-w-xl w-full">
+				<p className="text-2xl text-th-soft mb-10 font-bold">🎬 Game Host</p>
+				<div className="bg-th-panel p-10 rounded-2xl text-center border-4 border-dashed border-th-info hover:border-th-accent transition-colors shadow-2xl max-w-xl w-full">
 					<div className="mb-6">
 						<span className="text-7xl">📁</span>
 					</div>
 					<p className="text-2xl mb-6 font-bold text-white" style={{ fontFamily: 'PrintClearly, sans-serif' }}>Load your quiz pack</p>
-					<p className="text-sm text-blue-300 mb-6">Upload a .zip file to start hosting</p>
+					<p className="text-sm text-th-soft mb-6">Upload a .zip file to start hosting</p>
 					<label className="btn-primary inline-block text-xl px-10 py-4 cursor-pointer uppercase tracking-wide">
                 Choose File
 						<input type="file" accept=".zip" onChange={handleFileUpload} className="hidden" />
 					</label>
 				</div>
-				<Link href="/" className="mt-10 btn-primary bg-[#685af5] hover:bg-[#7b6ff7] text-white px-8 py-3 text-lg uppercase tracking-wide">
+				<Link href="/" className="mt-10 btn-primary bg-th-primary hover:bg-th-primaryl text-white px-8 py-3 text-lg uppercase tracking-wide">
             ← Back to Home
 				</Link>
 			</div>
@@ -698,10 +701,14 @@ export default function SceneItGame () {
 
 	const TeamsScreen = () => {
 		return (
-		<GameWrapper className="flex items-center justify-center" style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: '#685af5', backgroundBlendMode: 'multiply' }}>
+		<GameWrapper className="flex items-center justify-center" style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: 'rgb(var(--th-bg2))', backgroundBlendMode: 'multiply' }}>
 				<div className="flex flex-col items-center justify-center min-h-screen p-4 w-full max-w-3xl">
 					<h1 className="text-6xl md:text-7xl font-bold mb-2 text-white uppercase" style={{ fontFamily: 'PrintClearly, sans-serif', WebkitTextStroke: '1px rgba(255,255,255,0.3)' }}>Team Setup</h1>
-					<p className="text-xl text-blue-200 mb-8 font-bold">Add your teams below</p>
+					<p className="text-xl text-th-soft mb-8 font-bold">Add your teams below</p>
+
+					<div className="w-full mb-4 flex items-center justify-center">
+						<ThemePickerBar />
+					</div>
 
 					{/* Session restore — shown if a previous game's scores were saved to localStorage */}
 					{(() => {
@@ -711,10 +718,10 @@ export default function SceneItGame () {
 							const session = JSON.parse(saved)
 							if (!session?.teams?.length) return null
 							return (
-								<div className="w-full mb-4 rounded-xl bg-[#e6c642]/20 border-2 border-[#e6c642] px-5 py-4 flex items-center gap-4">
+								<div className="w-full mb-4 rounded-xl bg-th-accent/20 border-2 border-th-accent px-5 py-4 flex items-center gap-4">
 									<span className="text-2xl">⚠️</span>
 									<div className="flex-1 min-w-0">
-										<p className="text-[#e6c642] font-black uppercase text-sm tracking-wide">Previous session found</p>
+										<p className="text-th-accent font-black uppercase text-sm tracking-wide">Previous session found</p>
 										<p className="text-white/80 text-xs mt-0.5 truncate">{session.teams.map(t => `${t.name} (${t.score}pts)`).join(' · ')}</p>
 									</div>
 									<button
@@ -734,7 +741,7 @@ export default function SceneItGame () {
 											setTeams(session.teams)
 											setRevealedMovies(session.revealedMovies || {})
 										}}
-										className="btn-primary bg-[#e6c642] before:bg-[#b89a1a] text-black font-black uppercase text-sm px-4 py-2 shrink-0"
+										className="btn-primary bg-th-accent before:bg-th-accentd text-black font-black uppercase text-sm px-4 py-2 shrink-0"
 									>
 										<span style={{ position: 'relative', zIndex: 1 }}>↩ Restore</span>
 									</button>
@@ -744,26 +751,26 @@ export default function SceneItGame () {
 					})()}
 
 					{/* Splatoon Mode Toggle */}
-					<div className="w-full mb-6 rounded-2xl overflow-hidden" style={{ background: '#1a1f38', border: `3px solid ${usingSplatoon ? '#685af5' : '#3b82f6'}` }}>
+					<div className="w-full mb-6 rounded-2xl overflow-hidden" style={{ background: 'rgb(var(--th-panel))', border: `3px solid ${usingSplatoon ? 'rgb(var(--th-primary))' : 'rgb(var(--th-info))'}` }}>
 						<button
 							onClick={() => setUsingSplatoon(v => !v)}
-							className={`w-full py-4 px-6 flex items-center justify-between font-black text-xl uppercase transition-all ${usingSplatoon ? 'bg-[#685af5]' : 'bg-transparent'}`}
+							className={`w-full py-4 px-6 flex items-center justify-between font-black text-xl uppercase transition-all ${usingSplatoon ? 'bg-th-primary text-th-onprimary' : 'bg-transparent'}`}
 							style={{ fontFamily: 'PrintClearly, sans-serif' }}
 						>
 							<span>🦑 Splatoon Scoring</span>
-							<span className={`px-4 py-1 rounded-lg text-sm ${usingSplatoon ? 'bg-white text-[#685af5]' : 'bg-[#685af5] text-white'}`}>
+							<span className={`px-4 py-1 rounded-lg text-sm ${usingSplatoon ? 'bg-th-ink text-th-panel' : 'bg-th-primary text-th-onprimary'}`}>
 								{usingSplatoon ? 'ON' : 'OFF'}
 							</span>
 						</button>
 						{usingSplatoon && (
-							<div className="p-4 border-t border-[#685af5]/40">
-								<p className="text-purple-300 text-sm font-bold mb-3 uppercase tracking-wide">Number of Teams (Splatoon ink colors)</p>
+							<div className="p-4 border-t border-th-primary/40">
+								<p className="text-th-soft2 text-sm font-bold mb-3 uppercase tracking-wide">Number of Teams (Splatoon ink colors)</p>
 								<div className="flex gap-2 flex-wrap mb-3">
 									{[2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
 										<button
 											key={n}
 											onClick={() => setSplatoonTeamCount(n)}
-											className={`btn-primary px-4 py-2 text-lg font-black ${splatoonTeamCount === n ? 'bg-[#685af5] before:bg-[#4e3cc2]' : 'bg-[#2a3155] before:bg-[#1a2040]'}`}
+											className={`btn-primary px-4 py-2 text-lg font-black ${splatoonTeamCount === n ? 'bg-th-primary before:bg-th-primaryd' : 'bg-th-panel2 before:bg-th-paneld'}`}
 										>{n}</button>
 									))}
 								</div>
@@ -779,8 +786,8 @@ export default function SceneItGame () {
 					<div className="w-full space-y-4">
 						{!usingSplatoon && (
 							<>
-								<div className="bg-[#1a1f38] rounded-2xl p-4" style={{ border: '3px solid #3b82f6' }}>
-									<p className="text-blue-300 text-sm font-bold mb-3 uppercase tracking-wide">Number of Teams</p>
+								<div className="bg-th-panel rounded-2xl p-4" style={{ border: '3px solid rgb(var(--th-info))' }}>
+									<p className="text-th-soft text-sm font-bold mb-3 uppercase tracking-wide">Number of Teams</p>
 									<div className="flex gap-2 flex-wrap mb-3">
 										{[2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
 											<button
@@ -795,7 +802,7 @@ export default function SceneItGame () {
 													}))
 													setTeams(newTeams)
 												}}
-												className={`btn-primary px-4 py-2 text-lg font-black ${teamCount === n ? 'bg-[#3b82f6] before:bg-[#2563eb]' : 'bg-[#2a3155] before:bg-[#1a2040]'}`}
+												className={`btn-primary px-4 py-2 text-lg font-black ${teamCount === n ? 'bg-th-info before:bg-th-infod' : 'bg-th-panel2 before:bg-th-paneld'}`}
 											>{n}</button>
 										))}
 									</div>
@@ -810,12 +817,12 @@ export default function SceneItGame () {
 								</div>
 							</>
 						)}
-						<button onClick={startGame} className="btn-primary w-full py-5 text-2xl uppercase tracking-wide bg-[#22c55e] before:bg-[#16a34a] hover:bg-[#2dd44d]" style={{ fontFamily: 'PrintClearly, sans-serif' }}>▶ Start Game</button>
+						<button onClick={startGame} className="btn-primary w-full py-5 text-2xl uppercase tracking-wide bg-th-ok before:bg-th-okd hover:bg-th-okl" style={{ fontFamily: 'PrintClearly, sans-serif' }}>▶ Start Game</button>
 					</div>
 
 					{/* Student count for scratch picker */}
-					<div className="w-full mt-4 bg-[#1a1f38] rounded-2xl px-6 py-4" style={{ border: '3px solid #e6c642' }}>
-						<p className="text-[#e6c642] font-black uppercase text-sm tracking-wide mb-3">🎟 Student Picker (optional)</p>
+					<div className="w-full mt-4 bg-th-panel rounded-2xl px-6 py-4" style={{ border: '3px solid rgb(var(--th-accent))' }}>
+						<p className="text-th-accent font-black uppercase text-sm tracking-wide mb-3">🎟 Student Picker (optional)</p>
 						<div className="flex items-center gap-3 flex-wrap">
 							<span className="text-white font-bold">Number of students:</span>
 							<input
@@ -825,7 +832,7 @@ export default function SceneItGame () {
 								value={studentCount}
 								onChange={e => setStudentCount(e.target.value)}
 								placeholder="e.g. 30"
-								className="w-28 rounded-lg px-3 py-2 text-white text-xl font-black bg-[#2a3155] border-2 border-[#e6c642] focus:outline-none text-center"
+								className="w-28 rounded-lg px-3 py-2 text-white text-xl font-black bg-th-panel2 border-2 border-th-accent focus:outline-none text-center"
 							/>
 							<span className="text-white/50 text-sm">Leave blank to skip</span>
 						</div>
@@ -880,7 +887,7 @@ export default function SceneItGame () {
 					</span>
 					<button
 						onClick={handleClose}
-						className="btn-primary bg-[#f94e4e] before:bg-[#b02020] px-6 py-2 font-black uppercase"
+						className="btn-primary bg-th-bad before:bg-th-badd px-6 py-2 font-black uppercase"
 					>
 						<span style={{ position: 'relative', zIndex: 1 }}>✕ Close</span>
 					</button>
@@ -889,7 +896,7 @@ export default function SceneItGame () {
 				<iframe
           src={withBasePath('/scratch/scratch.html')}
 					className="rounded-2xl"
-					style={{ width: '100%', maxWidth: '900px', height: '70vh', border: '3px solid #e6c642' }}
+					style={{ width: '100%', maxWidth: '900px', height: '70vh', border: '3px solid rgb(var(--th-accent))' }}
 					title="Student Scratch Picker"
 				/>
 			</div>
@@ -916,10 +923,10 @@ export default function SceneItGame () {
 		}, [])
 
 		return (
-		<GameWrapper className="h-screen overflow-hidden flex flex-col" style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: '#307de7', backgroundBlendMode: 'multiply' }}>
+		<GameWrapper className="h-screen overflow-hidden flex flex-col" style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: 'rgb(var(--th-bg))', backgroundBlendMode: 'multiply' }}>
 				<div className="h-full flex flex-col p-4 md:p-5 w-full">
 					{/* Scoreboard Header */}
-					<div className="shrink-0 w-full flex flex-wrap justify-center items-center gap-2 mb-4 bg-[#1a1f38] px-4 py-3 rounded-2xl border-2 border-[#3b82f6] shadow-xl z-10">
+					<div className="shrink-0 w-full flex flex-wrap justify-center items-center gap-2 mb-4 bg-th-panel px-4 py-3 rounded-2xl border-2 border-th-info shadow-xl z-10">
 						<h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight mr-2" style={{ fontFamily: 'PrintClearly, sans-serif' }}>Scoreboard</h1>
 						<div className="flex gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
 							{teams.map((t, idx) => {
@@ -931,14 +938,14 @@ export default function SceneItGame () {
 										{/* Color circle indicator - only show in Splatoon mode */}
 										{usingSplatoon && <div className="w-6 h-6 rounded-full border-2 border-white shrink-0" style={{ background: color }} />}
 										<span className="text-white font-bold text-sm truncate max-w-[64px]">{displayName}</span>
-										<span className="ml-auto font-black text-2xl text-white rounded-lg px-2 py-0.5" style={{ fontFamily: 'PrintClearly, sans-serif', background: '#1a1f38', fontVariantNumeric: 'tabular-nums', minWidth: '2ch', textAlign: 'center' }}>{t.score}</span>
+										<span className="ml-auto font-black text-2xl text-white rounded-lg px-2 py-0.5" style={{ fontFamily: 'PrintClearly, sans-serif', background: 'rgb(var(--th-panel))', fontVariantNumeric: 'tabular-nums', minWidth: '2ch', textAlign: 'center' }}>{t.score}</span>
 									</div>
 								)
 							})}
 						</div>
 						<button
 							onClick={() => { if (window.confirm('End the game and show final scores?')) setGameState('gameOver') }}
-							className="btn-primary bg-[#f94e4e] before:bg-[#b02020] hover:bg-[#ff6060] px-5 py-2 text-sm font-black uppercase ml-2"
+							className="btn-primary bg-th-bad before:bg-th-badd hover:bg-th-badl px-5 py-2 text-sm font-black uppercase ml-2"
 							style={{ fontFamily: 'PrintClearly, sans-serif' }}
 						>
 							<span style={{ position: 'relative', zIndex: 1 }}>🏁 End Game</span>
@@ -946,8 +953,8 @@ export default function SceneItGame () {
 						{scratchRemaining.length > 0 && (
 							<button
 								onClick={() => setShowScratchModal(true)}
-								className="btn-primary bg-[#e6c642] before:bg-[#b89a1a] px-4 py-2 text-sm font-black uppercase"
-								style={{ fontFamily: 'PrintClearly, sans-serif', color: '#1a1f38', minWidth: '9rem', fontVariantNumeric: 'tabular-nums' }}
+								className="btn-primary bg-th-accent before:bg-th-accentd px-4 py-2 text-sm font-black uppercase"
+								style={{ fontFamily: 'PrintClearly, sans-serif', color: 'rgb(var(--th-panel))', minWidth: '9rem', fontVariantNumeric: 'tabular-nums' }}
 							>
 								<span style={{ position: 'relative', zIndex: 1 }}>🎟 Students ({scratchRemaining.length})</span>
 							</button>
@@ -996,7 +1003,7 @@ export default function SceneItGame () {
 									? 'cursor-not-allowed'
 									: 'cursor-pointer hover:scale-[1.04] hover:z-10'}
                     `}
-									style={{ border: isRevealed ? '4px solid #22c55e' : `4px solid ${cardColor}`, background: '#1a1f38' }}
+									style={{ border: isRevealed ? '4px solid rgb(var(--th-ok))' : `4px solid ${cardColor}`, background: 'rgb(var(--th-panel))' }}
 								>
 									{imageUrl
 										? (
@@ -1005,7 +1012,7 @@ export default function SceneItGame () {
 											/>
 										)
 										: (
-											<div className="w-full h-full flex items-center justify-center relative overflow-hidden" style={{ background: `${cardColor}22` }}>
+											<div className="w-full h-full flex items-center justify-center relative overflow-hidden" style={{ background: `color-mix(in srgb, ${cardColor} 13%, transparent)` }}>
 												<span className="text-8xl font-black" style={{ color: cardColor, opacity: 0.15 }}>{idx + 1}</span>
 												<span className="absolute text-5xl font-black text-white drop-shadow-lg" style={{ fontFamily: 'PrintClearly, sans-serif' }}>#{idx + 1}</span>
 											</div>
@@ -1031,7 +1038,7 @@ export default function SceneItGame () {
 
 									{isRevealed && (
 										<div className="absolute inset-0 flex items-center justify-center bg-black/50">
-											<div className="transform -rotate-12 px-6 py-2 font-black text-2xl uppercase tracking-widest" style={{ background: '#22c55e', color: 'white' }}>
+											<div className="transform -rotate-12 px-6 py-2 font-black text-2xl uppercase tracking-widest" style={{ background: 'rgb(var(--th-ok))', color: 'white' }}>
                                 ✓ Done
 											</div>
 										</div>
@@ -1133,14 +1140,14 @@ export default function SceneItGame () {
 											top: `${question.coverShape.y}%`,
 											width: `${question.coverShape.width}%`,
 											height: `${question.coverShape.height}%`,
-											background: 'linear-gradient(135deg, #1c233a 0%, #2d3a5e 100%)',
-											border: '2px solid #685af5',
+											background: 'linear-gradient(135deg, rgb(var(--th-surface)) 0%, #2d3a5e 100%)',
+											border: '2px solid rgb(var(--th-primary))',
 											boxShadow: '0 0 16px #685af588',
 											opacity: showAnswer ? 0 : 1,
 											pointerEvents: 'none'
 										}}
 									>
-										<span className="font-black text-purple-300 drop-shadow-lg select-none" style={{ fontSize: 'clamp(1rem, 6cqw, 4rem)' }}>?</span>
+										<span className="font-black text-th-soft2 drop-shadow-lg select-none" style={{ fontSize: 'clamp(1rem, 6cqw, 4rem)' }}>?</span>
 									</div>
 								)}
 							</div>
@@ -1192,7 +1199,7 @@ export default function SceneItGame () {
 								? (
 									<button
 										onClick={handleReveal}
-										className="btn-primary w-full bg-[#e6c642] before:bg-[#b89a1a] hover:bg-[#f0d45a] text-black py-4 text-xl font-black uppercase tracking-wide"
+										className="btn-primary w-full bg-th-accent before:bg-th-accentd hover:bg-th-accentl text-black py-4 text-xl font-black uppercase tracking-wide"
 										style={{ fontFamily: 'PrintClearly, sans-serif' }}
 									>
                             Reveal Answer
@@ -1201,7 +1208,7 @@ export default function SceneItGame () {
 								: (
 									<button
 										onClick={handleContinueToScoring}
-										className="btn-primary w-full bg-[#22c55e] before:bg-[#16a34a] hover:bg-[#2dd44d] py-4 text-xl font-black uppercase tracking-wide"
+										className="btn-primary w-full bg-th-ok before:bg-th-okd hover:bg-th-okl py-4 text-xl font-black uppercase tracking-wide"
 										style={{ fontFamily: 'PrintClearly, sans-serif' }}
 									>
                             Continue →
@@ -1226,17 +1233,17 @@ export default function SceneItGame () {
         style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: bgColor, backgroundBlendMode: 'multiply' }}
 			>
 				<div className="relative z-10 w-full max-w-3xl mx-auto px-4">
-					<div className="bg-[#1a1f38] rounded-2xl p-8 flex flex-col gap-6" style={{ border: '3px solid #3b82f6' }}>
+					<div className="bg-th-panel rounded-2xl p-8 flex flex-col gap-6" style={{ border: '3px solid rgb(var(--th-info))' }}>
 						{/* Correct answer */}
 						<div className="text-center">
-							<p className="text-lg uppercase tracking-widest text-blue-300 mb-3 font-black">Correct Answer</p>
-							<div className="btn-primary inline-block bg-[#22c55e] before:bg-[#16a34a] text-white text-4xl font-black px-12 py-5 cursor-default" style={{ fontFamily: 'PrintClearly, sans-serif' }}>
+							<p className="text-lg uppercase tracking-widest text-th-soft mb-3 font-black">Correct Answer</p>
+							<div className="btn-primary inline-block bg-th-ok before:bg-th-okd text-white text-4xl font-black px-12 py-5 cursor-default" style={{ fontFamily: 'PrintClearly, sans-serif' }}>
 								<FuriganaText text={question.correctAnswer || '(No answer set)'} gap="1.5em" />
 							</div>
 						</div>
 
 						{/* Divider */}
-						<div className="border-t-2 border-[#3b82f6]" />
+						<div className="border-t-2 border-th-info" />
 
 						{/* Team marking */}
 						<div>
@@ -1252,8 +1259,8 @@ export default function SceneItGame () {
 											className="team-btn py-5 px-6 text-xl uppercase tracking-wide flex items-center justify-center gap-3"
 											style={marked
 												? {
-													'--team-color': '#22c55e',
-													'--team-dark-color': '#16a34a'
+													'--team-color': 'rgb(var(--th-ok))',
+													'--team-dark-color': 'rgb(var(--th-okd))'
 												}
 												: {
 													'--team-color': color,
@@ -1261,7 +1268,7 @@ export default function SceneItGame () {
 												}}
 										>
 											{/* Color circle indicator */}
-											<div className="w-6 h-6 rounded-full border-2 border-white shrink-0" style={{ background: marked ? '#22c55e' : color }} />
+											<div className="w-6 h-6 rounded-full border-2 border-white shrink-0" style={{ background: marked ? 'rgb(var(--th-ok))' : color }} />
 											<span className="flex-1">{marked ? '✓ ' : ''}{t.name}</span>
 										</button>
 									)
@@ -1280,10 +1287,10 @@ export default function SceneItGame () {
 									? 'Race!'
 									: isLastQuestion ? 'Finish Movie' : 'Continue'
 							const btnColor = goesToSplatoon
-								? 'bg-[#685af5] before:bg-[#4e3cc2] hover:bg-[#7b6ff7]'
+								? 'bg-th-primary before:bg-th-primaryd hover:bg-th-primaryl'
 								: goesToRace
-									? 'bg-[#f94e4e] before:bg-[#c02020] hover:bg-[#ff6060]'
-									: 'bg-[#3b82f6] before:bg-[#2563eb] hover:bg-[#5490f1]'
+									? 'bg-th-bad before:bg-th-badd hover:bg-th-badl'
+									: 'bg-th-info before:bg-th-infod hover:bg-th-infol'
 							const icon = goesToSplatoon ? '🦑 ' : goesToRace ? '🏎️ ' : ''
 							return (
 								<button
@@ -1304,7 +1311,7 @@ export default function SceneItGame () {
 	}
 
 	const GameOverScreen = () => {
-		const TEAM_COLORS_GO = ['#3b82f6', '#f94e4e', '#685af5', '#3ce956', '#e6c642', '#a656fd', '#ff8c00', '#00c9c9']
+		const TEAM_COLORS_GO = ['rgb(var(--th-info))', 'rgb(var(--th-bad))', 'rgb(var(--th-primary))', '#3ce956', 'rgb(var(--th-accent))', '#a656fd', '#ff8c00', '#00c9c9']
 		const sorted = [...teams].map((t, i) => ({ ...t, originalIdx: i })).sort((a, b) => b.score - a.score)
 		const medals = ['🥇', '🥈', '🥉']
 		const n = sorted.length
@@ -1312,11 +1319,11 @@ export default function SceneItGame () {
 		const weight = (rank) => Math.sqrt(Math.max(1, n - rank))
 		const totalDelay = n * 0.18 // used to delay the back button until all rows have appeared
 		return (
-		<GameWrapper className="fixed inset-0 h-screen w-screen overflow-hidden flex flex-col" style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: '#e6c642', backgroundBlendMode: 'multiply' }}>
+		<GameWrapper className="fixed inset-0 h-screen w-screen overflow-hidden flex flex-col" style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: 'rgb(var(--th-accent))', backgroundBlendMode: 'multiply' }}>
 				{/* Header */}
-				<div className="shrink-0 flex items-center justify-center gap-4 py-4 px-6 bg-[#1a1f38] anim-drop-bounce" style={{ borderBottom: '3px solid #e6c642', animationDelay: '0s' }}>
+				<div className="shrink-0 flex items-center justify-center gap-4 py-4 px-6 bg-th-panel anim-drop-bounce" style={{ borderBottom: '3px solid rgb(var(--th-accent))', animationDelay: '0s' }}>
 					<span className="text-4xl">🏆</span>
-					<h1 className="text-4xl font-black text-white uppercase tracking-wide" style={{ fontFamily: 'PrintClearly, sans-serif', WebkitTextStroke: '0.5px #e6c642' }}>Final Scores</h1>
+					<h1 className="text-4xl font-black text-white uppercase tracking-wide" style={{ fontFamily: 'PrintClearly, sans-serif', WebkitTextStroke: '0.5px rgb(var(--th-accent))' }}>Final Scores</h1>
 				</div>
 
 				{/* Team rows — centred column, proportional height, slide in left staggered */}
@@ -1340,7 +1347,7 @@ export default function SceneItGame () {
 									flexGrow: w,
 									flexBasis: 0,
 									background: color,
-									border: rank === 0 ? '3px solid #e6c642' : '2px solid transparent',
+									border: rank === 0 ? '3px solid rgb(var(--th-accent))' : '2px solid transparent',
 									boxShadow: rank === 0 ? '0 0 24px #e6c64244' : 'none',
 									paddingTop: py,
 									paddingBottom: py,
@@ -1356,7 +1363,7 @@ export default function SceneItGame () {
 								<span className="flex-1 font-black text-white uppercase tracking-wide truncate" style={{ fontFamily: 'PrintClearly, sans-serif', fontSize: nameSize }}>
 									{t.name}
 								</span>
-								<span className="font-black text-white rounded-lg px-2 py-0.5" style={{ fontFamily: 'PrintClearly, sans-serif', fontSize: scoreSize, background: '#1a1f38' }}>
+								<span className="font-black text-white rounded-lg px-2 py-0.5" style={{ fontFamily: 'PrintClearly, sans-serif', fontSize: scoreSize, background: 'rgb(var(--th-panel))' }}>
 									{t.score}
 								</span>
 								<span className="text-white/70 font-bold" style={{ fontSize: `calc(${scoreSize} * 0.65)` }}>pts</span>
@@ -1369,7 +1376,7 @@ export default function SceneItGame () {
 				<div className="shrink-0 p-3 pt-0 max-w-3xl w-full mx-auto anim-fade-up" style={{ animationDelay: `${totalDelay.toFixed(2)}s` }}>
 					<button
 						onClick={() => setGameState('grid')}
-						className="btn-primary w-full py-3 text-lg font-black uppercase tracking-wide bg-[#3b82f6] before:bg-[#2563eb] hover:bg-[#5490f1]"
+						className="btn-primary w-full py-3 text-lg font-black uppercase tracking-wide bg-th-info before:bg-th-infod hover:bg-th-infol"
 						style={{ fontFamily: 'PrintClearly, sans-serif' }}
 					>
 						<span style={{ position: 'relative', zIndex: 1 }}>← Back to Movie Menu</span>
@@ -1380,12 +1387,12 @@ export default function SceneItGame () {
 	}
 
 	const RacePickerScreen = () => (
-		<GameWrapper className="fixed inset-0 h-screen w-screen overflow-hidden flex flex-col" style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: '#f94e4e', backgroundBlendMode: 'multiply' }}>
+		<GameWrapper className="fixed inset-0 h-screen w-screen overflow-hidden flex flex-col" style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: 'rgb(var(--th-bad))', backgroundBlendMode: 'multiply' }}>
 			<div className="flex-1 overflow-hidden p-4 flex flex-col gap-4">
 				{/* Header */}
 				<div className="w-full">
-					<div className="bg-[#1a1f38] rounded-2xl px-8 py-4 flex items-center justify-between" style={{ border: '3px solid #f94e4e' }}>
-						<button onClick={() => setGameState('scoring')} className="btn-primary bg-[#685af5] before:bg-[#4e3cc2] px-5 py-2 text-sm font-bold uppercase">← Back</button>
+					<div className="bg-th-panel rounded-2xl px-8 py-4 flex items-center justify-between" style={{ border: '3px solid rgb(var(--th-bad))' }}>
+						<button onClick={() => setGameState('scoring')} className="btn-primary bg-th-primary before:bg-th-primaryd px-5 py-2 text-sm font-bold uppercase">← Back</button>
 						<div className="text-center">
 							<h1 className="text-4xl md:text-5xl font-black text-white uppercase" style={{ fontFamily: 'PrintClearly, sans-serif', WebkitTextStroke: '0.5px white' }}>🏎️ Pick a Race!</h1>
 						</div>
@@ -1402,7 +1409,7 @@ export default function SceneItGame () {
 								key={race.dir}
 								onClick={() => handleRaceSelect(race)}
 								className="group relative rounded-xl overflow-hidden transition-all duration-200 hover:scale-[1.04] active:scale-95"
-								style={{ border: `3px solid ${borderColor}`, background: '#1a1f38' }}
+								style={{ border: `3px solid ${borderColor}`, background: 'rgb(var(--th-panel))' }}
 							>
 								{/* Thumbnails load from /race/... which is served via SW cache in obscured builds.
                     If the pack hasn't loaded yet, this will just show the gradient overlay. */}
@@ -1563,12 +1570,12 @@ export default function SceneItGame () {
 			return (
 				<GameWrapper
 					className="fixed inset-0 h-screen w-screen overflow-hidden flex flex-col items-center"
-          style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: '#685af5', backgroundBlendMode: 'multiply' }}
+          style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: 'rgb(var(--th-bg2))', backgroundBlendMode: 'multiply' }}
 				>
 					{/* Header */}
 					<div className="shrink-0 text-center anim-drop-bounce pt-6 pb-2">
 						<h2 className="text-5xl md:text-6xl font-black text-white uppercase" style={{ fontFamily: 'PrintClearly, sans-serif', WebkitTextStroke: '1px rgba(255,255,255,0.3)' }}>🏁 Race Done!</h2>
-						<p className="text-purple-300 text-lg font-black uppercase mt-1">Turn order set for the Splatoon map</p>
+						<p className="text-th-soft2 text-lg font-black uppercase mt-1">Turn order set for the Splatoon map</p>
 					</div>
 
 					{/* Turn order list — fills remaining height */}
@@ -1608,7 +1615,7 @@ export default function SceneItGame () {
 					<div className="shrink-0 pb-6 anim-bounce-in" style={{ animationDelay: `${turnColors.length * 0.08 + 0.3}s` }}>
 						<button
 							onClick={handleApplyRacePoints}
-							className="btn-primary bg-[#22c55e] before:bg-[#16a34a] hover:bg-[#2dd44d] px-16 py-5 text-2xl font-black text-white uppercase tracking-wide"
+							className="btn-primary bg-th-ok before:bg-th-okd hover:bg-th-okl px-16 py-5 text-2xl font-black text-white uppercase tracking-wide"
 							style={{ fontFamily: 'PrintClearly, sans-serif' }}
 						>
 							<span style={{ position: 'relative', zIndex: 1 }}>🦑 Go to Map</span>
@@ -1626,12 +1633,12 @@ export default function SceneItGame () {
 		return (
 			<GameWrapper
 				className="fixed inset-0 h-screen w-screen overflow-hidden"
-        style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: '#f94e4e', backgroundBlendMode: 'multiply' }}
+        style={{ backgroundImage: `url('${withBasePath('/play_bg.webp')}')`, backgroundColor: 'rgb(var(--th-bad))', backgroundBlendMode: 'multiply' }}
 			>
 				<div className="min-h-screen flex flex-col items-center justify-center p-6">
 
 					{/* Single animated leaderboard with title integrated */}
-					<div className="w-full max-w-lg bg-[#1a1f38] rounded-2xl p-5" style={{ border: '3px solid #3b82f6' }}>
+					<div className="w-full max-w-lg bg-th-panel rounded-2xl p-5" style={{ border: '3px solid rgb(var(--th-info))' }}>
 						<h2 className="text-4xl font-black text-white uppercase text-center mb-4 anim-drop-bounce" style={{ fontFamily: 'PrintClearly, sans-serif', WebkitTextStroke: '1px rgba(255,255,255,0.3)' }}>🏁 Race Results</h2>
 						<div className="relative" style={{ height: `${containerHeight}px`, transition: phase >= 3 ? 'height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none' }}>
 							{initialOrder.map((t, initialPos) => {
@@ -1688,7 +1695,7 @@ export default function SceneItGame () {
 											{phase >= 1 && pts > 0 && (
 												<span
 													className="font-black px-2 py-0.5 rounded-lg anim-pop-in"
-													style={{ background: '#22c55e', color: 'white', fontSize: phase >= 3 ? `${Math.max(0.875, 1 - finalPos * 0.04)}rem` : '1rem' }}
+													style={{ background: 'rgb(var(--th-ok))', color: 'white', fontSize: phase >= 3 ? `${Math.max(0.875, 1 - finalPos * 0.04)}rem` : '1rem' }}
 												>
                           +{pts}
 												</span>
@@ -1702,7 +1709,7 @@ export default function SceneItGame () {
 													fontSize: phase >= 3 ? `${Math.max(1.5, 1.875 - finalPos * 0.08)}rem` : '1.875rem',
 													transition: 'color 0.4s ease, font-size 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
 													color: phase >= 2 && pts > 0 ? '#86efac' : 'white',
-													background: '#1a1f38'
+													background: 'rgb(var(--th-panel))'
 												}}
 											>
 												{displayScores[t.idx] ?? t.score}
@@ -1720,7 +1727,7 @@ export default function SceneItGame () {
 				{phase >= 3 && (
 					<button
 						onClick={handleApplyRacePoints}
-						className="fixed bottom-6 right-6 btn-primary bg-[#22c55e] before:bg-[#16a34a] hover:bg-[#2dd44d] px-8 py-4 text-xl font-black text-white uppercase tracking-wide anim-bounce-in shadow-2xl"
+						className="fixed bottom-6 right-6 btn-primary bg-th-ok before:bg-th-okd hover:bg-th-okl px-8 py-4 text-xl font-black text-white uppercase tracking-wide anim-bounce-in shadow-2xl"
 						style={{ fontFamily: 'PrintClearly, sans-serif', zIndex: 50 }}
 					>
 						<span style={{ position: 'relative', zIndex: 1 }}>▶ Continue</span>
@@ -1758,7 +1765,7 @@ export default function SceneItGame () {
 								maxHeight: '78vh',
 								maxWidth: '90vw',
 								objectFit: 'contain',
-								border: '4px solid #3b82f6',
+								border: '4px solid rgb(var(--th-info))',
 								filter: blurUnblurred ? 'blur(0px)' : 'blur(48px)',
 								transform: blurUnblurred ? 'scale(1)' : 'scale(1.08)',
 								transition: 'filter 2s cubic-bezier(0.4,0,0.2,1), transform 2s cubic-bezier(0.4,0,0.2,1)'
@@ -1808,7 +1815,7 @@ export default function SceneItGame () {
 									</div>
 								)}
 						</div>
-						<div className="h-20 bg-[#1a1f38] flex items-center justify-between px-8 shrink-0 z-50" style={{ borderTop: '3px solid #3b82f6' }}>
+						<div className="h-20 bg-th-panel flex items-center justify-between px-8 shrink-0 z-50" style={{ borderTop: '3px solid rgb(var(--th-info))' }}>
 							<div className="text-white font-black text-lg uppercase" style={{ fontFamily: 'PrintClearly, sans-serif' }}>
 								{movie.questions.length} Question{movie.questions.length !== 1 ? 's' : ''} to follow
 							</div>
@@ -1832,8 +1839,8 @@ export default function SceneItGame () {
         const raceUrl = withBasePath(`/race/${selectedRace?.dir}/index.html?countdown=00:00:10&characters=${racingTeamNames.length || teams.length}&volume=20`)
 				return (
 					<div className="fixed inset-0 z-50 bg-black flex flex-col">
-						<div className="h-12 bg-[#1a1f38] flex items-center px-4 gap-4 shrink-0 z-50" style={{ borderBottom: '3px solid #f94e4e' }}>
-							<button onClick={() => setGameState('racePicker')} className="btn-primary bg-[#685af5] before:bg-[#4e3cc2] px-4 py-1 text-sm font-bold uppercase">Back</button>
+						<div className="h-12 bg-th-panel flex items-center px-4 gap-4 shrink-0 z-50" style={{ borderBottom: '3px solid rgb(var(--th-bad))' }}>
+							<button onClick={() => setGameState('racePicker')} className="btn-primary bg-th-primary before:bg-th-primaryd px-4 py-1 text-sm font-bold uppercase">Back</button>
 							<span className="text-white font-black text-lg uppercase" style={{ fontFamily: 'PrintClearly, sans-serif' }}>{selectedRace?.emoji} {selectedRace?.name}</span>
 						</div>
 						<div className="flex-1 relative">
@@ -1841,7 +1848,7 @@ export default function SceneItGame () {
 							{raceCountdown !== null && (
 								<div className="absolute inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(28,35,58,0.9)' }}>
 									<div className="text-center">
-										<div className="text-[12rem] font-black text-white leading-none" style={{ fontFamily: 'PrintClearly, sans-serif', WebkitTextStroke: '3px #f94e4e', textShadow: '0 0 60px #f94e4e' }}>{raceCountdown}</div>
+										<div className="text-[12rem] font-black text-white leading-none" style={{ fontFamily: 'PrintClearly, sans-serif', WebkitTextStroke: '3px rgb(var(--th-bad))', textShadow: '0 0 60px rgb(var(--th-bad))' }}>{raceCountdown}</div>
 										<p className="text-white text-3xl font-black uppercase mt-4" style={{ fontFamily: 'PrintClearly, sans-serif' }}>Race Over!</p>
 									</div>
 								</div>
@@ -1857,31 +1864,31 @@ export default function SceneItGame () {
         const splatUrl = withBasePath(`/splatoon/index.html?quizMode=1&numTeams=${teams.length}&activeTeams=${currentSplatoonActiveIds.join(',')}`)
 				return (
 					<div className="fixed inset-0 z-50 bg-black flex flex-col">
-						<div className="h-12 bg-[#1a1f38] flex items-center px-4 gap-4 shrink-0" style={{ borderBottom: '3px solid #685af5' }}>
-							<button onClick={() => setGameState('raceResults')} className="btn-primary bg-[#685af5] before:bg-[#4e3cc2] px-4 py-1 text-sm font-bold uppercase">← Back</button>
+						<div className="h-12 bg-th-panel flex items-center px-4 gap-4 shrink-0" style={{ borderBottom: '3px solid rgb(var(--th-primary))' }}>
+							<button onClick={() => setGameState('raceResults')} className="btn-primary bg-th-primary before:bg-th-primaryd px-4 py-1 text-sm font-bold uppercase">← Back</button>
 							<span className="text-white font-black text-lg uppercase" style={{ fontFamily: 'PrintClearly, sans-serif' }}>🦑 Splatoon Round</span>
 							{/* Turn order hint */}
-							<span className="text-purple-300 text-sm font-bold hidden md:block">
+							<span className="text-th-soft2 text-sm font-bold hidden md:block">
                 Turn order: {currentSplatoonActiveIds.map(id => teams.find(t => t.splatoonId === id)?.name).filter(Boolean).join(' → ')}
 							</span>
 							{/* Rules button — always visible */}
 							<button
 								onClick={() => setShowRulesModal(true)}
-								className="btn-primary bg-[#e6c642] before:bg-[#b89a1a] px-4 py-1 text-sm font-black uppercase"
+								className="btn-primary bg-th-accent before:bg-th-accentd px-4 py-1 text-sm font-black uppercase"
 								style={{ marginLeft: 'auto' }}
 							>📖 ルール</button>
 							{/* Manual Continue — only shown after round ends */}
 							{splatoonRoundDone && (
 								<button
 									onClick={handleSplatoonContinue}
-									className="btn-primary bg-[#22c55e] before:bg-[#16a34a] hover:bg-[#2dd44d] px-6 py-1 text-sm font-black uppercase animate-pulse"
+									className="btn-primary bg-th-ok before:bg-th-okd hover:bg-th-okl px-6 py-1 text-sm font-black uppercase animate-pulse"
 									style={{ fontFamily: 'PrintClearly, sans-serif' }}
 								>
                   ▶ Continue
 								</button>
 							)}
 							{!splatoonRoundDone && (
-								<span className="text-purple-300 text-sm font-bold">
+								<span className="text-th-soft2 text-sm font-bold">
 									{currentSplatoonActiveIds.length} team{currentSplatoonActiveIds.length !== 1 ? 's' : ''} playing
 								</span>
 							)}
@@ -1902,8 +1909,8 @@ export default function SceneItGame () {
 								onClick={() => setShowRulesModal(false)}
 							>
 								<div
-									className="bg-[#1a1f38] rounded-2xl p-8 max-w-lg w-full mx-4 flex flex-col gap-5"
-									style={{ border: '3px solid #685af5' }}
+									className="bg-th-panel rounded-2xl p-8 max-w-lg w-full mx-4 flex flex-col gap-5"
+									style={{ border: '3px solid rgb(var(--th-primary))' }}
 									onClick={e => e.stopPropagation()}
 								>
 									<h2 className="text-3xl font-black text-white uppercase text-center" style={{ fontFamily: 'PrintClearly, sans-serif' }}>📖 ルール</h2>
@@ -1922,7 +1929,7 @@ export default function SceneItGame () {
 									</ul>
 									<button
 										onClick={() => setShowRulesModal(false)}
-										className="btn-primary bg-[#685af5] before:bg-[#4e3cc2] px-8 py-3 font-black uppercase text-white self-center"
+										className="btn-primary bg-th-primary before:bg-th-primaryd px-8 py-3 font-black uppercase text-white self-center"
 									>
 										<span style={{ position: 'relative', zIndex: 1 }}>閉じる</span>
 									</button>

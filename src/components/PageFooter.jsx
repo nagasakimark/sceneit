@@ -38,7 +38,7 @@ export default function Footer ({ alert = false }) {
 							{
 								alert
 									? <GoAlert className='text-[25px] mx-auto' color='#0f172a' />
-									: <MdInfo className='text-[25px]' style={{ color: '#1c233a' }} />
+									: <MdInfo className='text-[25px]' style={{ color: 'rgb(var(--th-surface))' }} />
 							}
 						</button>
 						<p className={`absolute bottom-full -right-14 sm:bottom-auto sm:top-[2px] whitespace-pre sm:whitespace-nowrap text-sm md:text-base bg-white text-slate-900 rounded-md py-1 px-4 text-left transition-all ${showInfo ? 'opacity-100 -right-14  sm:!right-7 ' : 'opacity-0 right-0 pointer-events-none'}`}>

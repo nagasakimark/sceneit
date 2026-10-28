@@ -51,7 +51,7 @@ export default function FramePicker ({ video, onPick }) {
 	const btn = 'px-3 py-1 rounded text-xs font-semibold bg-gray-600 hover:bg-gray-500 text-white'
 	return (
 		<div className="mt-2">
-			<button type="button" onClick={() => setOpen(!open)} className="text-xs text-blue-400 hover:text-blue-300 font-medium">
+			<button type="button" onClick={() => setOpen(!open)} className="text-xs text-blue-400 hover:text-th-soft font-medium">
 				{open ? 'Close video' : '🎞 Pick a frame from the video'}
 			</button>
 			{open && url && (

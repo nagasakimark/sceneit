@@ -1,10 +1,16 @@
 import { Html, Head, Main, NextScript } from 'next/document'
+import { themeCss, THEME_IDS, STORAGE_KEY } from '@/themes/themes'
+
+// Runs before first paint so the saved theme never flashes the wrong colours.
+const NO_FLASH = `(function(){try{var ids=${JSON.stringify(THEME_IDS)};var q=new URLSearchParams(location.search).get('theme')||localStorage.getItem('${STORAGE_KEY}');if(ids.indexOf(q)>-1)document.documentElement.setAttribute('data-theme',q)}catch(e){}})()`
 
 export default function Document () {
 	return (
 		<Html lang="en">
 			<Head>
 				<meta charSet="UTF-8" />
+				<style id="theme-vars" dangerouslySetInnerHTML={{ __html: themeCss() }} />
+				<script dangerouslySetInnerHTML={{ __html: NO_FLASH }} />
 				<link rel="icon" href="/favicon.svg" />
 
 				{/* <!-- Meta --> */}

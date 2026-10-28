@@ -26,7 +26,7 @@ export default function MainHome () {
 						</span>
 					))}
 				</h1>
-				<div className='bg-[#1c233a] absolute w-full lg:w-[41.7vw] h-40 top-16 left-0'></div>
+				<div className='bg-th-surface absolute w-full lg:w-[41.7vw] h-40 top-16 left-0'></div>
 				<p className=' mb-20 relative'>
 					Play an infinite number of possible questions!
 				</p>
@@ -34,7 +34,7 @@ export default function MainHome () {
 			<button onClick={handlePlay} id='play' href="play" className='btn-primary uppercase px-6 py-4 text-lg max-w-md w-full mx-auto mt-10' >
 				Play
 			</button>
-      <a href="/editor" className='btn-primary bg-purple-600 hover:bg-purple-700 border-none uppercase px-6 py-4 text-lg max-w-md w-full mx-auto mt-4 block'>
+      <a href="/editor" className='btn-primary bg-th-primary border-none uppercase px-6 py-4 text-lg max-w-md w-full mx-auto mt-4 block'>
         Editor
       </a>
 			<PageFooter />

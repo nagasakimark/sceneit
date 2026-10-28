@@ -40,7 +40,7 @@ export default function Main () {
 				>
 					<button
 						onClick={handleStart}
-						className="btn-primary bg-[#f94e4e] before:bg-[#b02020] hover:bg-[#ff6060] uppercase px-16 py-7 text-4xl shadow-2xl"
+						className="btn-primary bg-th-bad before:bg-th-badd hover:bg-th-badl uppercase px-16 py-7 text-4xl shadow-2xl"
 						style={{ fontFamily: 'PrintClearly, sans-serif', letterSpacing: '0.08em' }}
 					>
 						<span style={{ position: 'relative', zIndex: 1 }}>▶ Start</span>

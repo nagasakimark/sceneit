@@ -3,6 +3,8 @@ import { Rubik } from '@next/font/google'
 import Head from 'next/head'
 import { useEffect } from 'react'
 import NewGameForm from '@/components/Form/NewGameForm'
+import ThemeSync from '@/themes/ThemeSync'
+import ThemeDecor from '@/themes/ThemeDecor'
 import { registerRacePackServiceWorkerOnly } from '@/helpers/racePack'
 const rubik = Rubik({ subsets: ['latin'] })
 
@@ -37,7 +39,9 @@ export default function App ({ Component, pageProps }) {
 			<Head>
 				<meta name="viewport" content="width=device-width, initial-scale=1" />
 			</Head>
+			<ThemeSync />
 			<Component {...pageProps} />
+			<ThemeDecor />
 			<NewGameForm />
 			<style jsx global>{`
         html {

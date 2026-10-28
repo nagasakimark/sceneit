@@ -6,11 +6,12 @@
 	"lint": "eslint .",
 	"scripts": {
 		"dev": "next dev",
-		"build": "next build",
+		"build": "node scripts/check-contrast.js && next build",
 		"pack:race": "node scripts/pack-race.js",
 		"build:obscured": "node scripts/build-obscured-race.js",
 		"start": "next start",
-		"lint": "next lint"
+		"lint": "next lint",
+		"check:themes": "node scripts/check-contrast.js"
 	},
 	"dependencies": {
 		"@next/font": "13.1.5",

@@ -7,7 +7,7 @@ export default function EditorPage () {
 	const [selectedType, setSelectedType] = useState(null)
 
 	return (
-		<div className="min-h-screen bg-[#1c233a]  text-white font-sans">
+		<div className="min-h-screen bg-th-surface  text-white font-sans">
 			<Head>
 				<title>Quizi Editor</title>
 			</Head>

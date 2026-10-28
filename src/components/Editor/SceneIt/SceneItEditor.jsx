@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import JSZip from 'jszip'
 import FramePicker from './FramePicker'
+import ThemePicker from '@/themes/ThemePicker'
+import { isTheme, DEFAULT_THEME } from '@/themes/themes'
 import { compressVideo } from '@/helpers/compressVideo'
 
 // ---------- CoverShapeEditor ----------
@@ -94,14 +96,14 @@ function CoverShapeEditor ({ imageFile, coverShape, onChange }) {
 						top: `${coverShape.y}%`,
 						width: `${coverShape.width}%`,
 						height: `${coverShape.height}%`,
-						background: 'linear-gradient(135deg, #1c233a 0%, #2d3a5e 100%)',
-						border: '2px solid #685af5',
+						background: 'linear-gradient(135deg, rgb(var(--th-surface)) 0%, #2d3a5e 100%)',
+						border: '2px solid rgb(var(--th-primary))',
 						boxShadow: '0 0 12px #685af588'
 					}}
 					onMouseDown={(e) => onMouseDown(e, 'move')}
 				>
 					<div className="flex flex-col items-center pointer-events-none select-none gap-0.5">
-						<span className="text-purple-300 font-black" style={{ fontSize: 'clamp(10px,4cqw,2rem)' }}>?</span>
+						<span className="text-th-soft2 font-black" style={{ fontSize: 'clamp(10px,4cqw,2rem)' }}>?</span>
 						<span className="text-yellow-300 text-[10px] font-bold opacity-70">drag to move</span>
 					</div>
 					{handles.map(h => (
@@ -166,6 +168,7 @@ async function loadQuizZipForEditing (file) {
 			questions
 		})
 	}
+	movies.theme = quizData.theme
 	return movies
 }
 // ---------- end loadQuizZipForEditing ----------
@@ -338,6 +341,7 @@ export default function SceneItEditor () {
 	const [currentMovieIndex, setCurrentMovieIndex] = useState(null)
 	const [isGenerating, setIsGenerating] = useState(false)
 	const [compressVideos, setCompressVideos] = useState(true)
+	const [quizTheme, setQuizTheme] = useState(DEFAULT_THEME)
 	const [progressText, setProgressText] = useState(null)
 	const [isImporting, setIsImporting] = useState(false)
 	const [validationModal, setValidationModal] = useState(null)
@@ -453,6 +457,7 @@ export default function SceneItEditor () {
 		setIsImporting(true)
 		try {
 			const imported = await loadQuizZipForEditing(file)
+			if (isTheme(imported.theme)) setQuizTheme(imported.theme)
 
 			// Validate imported data
 			const validation = validateQuizData(imported)
@@ -514,6 +519,7 @@ export default function SceneItEditor () {
 			// Prepare the JSON structure
 			const quizData = {
 				type: 'scene-it',
+				theme: quizTheme,
 				created: new Date().toISOString(),
 				movies: []
 			}
@@ -611,6 +617,10 @@ export default function SceneItEditor () {
 				<div className="mb-6">
 					<h1 className="text-4xl font-bold mb-2">Scene It - Quiz Editor</h1>
 					<p className="text-gray-400">Create and edit movie quiz packs with questions, images, and video clips</p>
+					<div className="mt-4 flex flex-wrap items-center gap-3">
+						<span className="text-xs font-semibold text-gray-300 uppercase">Quiz theme</span>
+						<ThemePicker value={quizTheme} onChange={setQuizTheme} label="Quiz theme" />
+					</div>
 				</div>
 
 				<div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 h-[calc(100vh-180px)]">
